@@ -62,6 +62,6 @@ improvements or bug fixes to the software.
 
 [pkp]: http://pkp.sfu.ca/
 [readme]: docs/README
-[wiki-dev]: http://pkp.sfu.ca/wiki/index.php/HOW-TO_check_out_PKP_applications_from_git
+[wiki-dev]: https://docs.pkp.sfu.ca/
 [php-unit]: http://phpunit.de/
 [gpl-licence]: docs/COPYING
