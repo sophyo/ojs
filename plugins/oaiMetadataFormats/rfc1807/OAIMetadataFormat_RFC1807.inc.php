@@ -3,8 +3,8 @@
 /**
  * @file plugins/oaiMetadataFormats/rfc1807/OAIMetadataFormat_RFC1807.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class OAIMetadataFormat_RFC1807
@@ -18,7 +18,7 @@ class OAIMetadataFormat_RFC1807 extends OAIMetadataFormat {
 	/**
 	 * @see OAIMetadataFormat#toXml
 	 */
-	function toXml(&$record, $format = null) {
+	function toXml($record, $format = null) {
 		$article =& $record->getData('article');
 		$journal =& $record->getData('journal');
 		$section =& $record->getData('section');
@@ -27,7 +27,7 @@ class OAIMetadataFormat_RFC1807 extends OAIMetadataFormat {
 
 		// Publisher
 		$publisher = $journal->getLocalizedName(); // Default
-		$publisherInstitution = $journal->getLocalizedSetting('publisherInstitution');
+		$publisherInstitution = $journal->getLocalizedData('publisherInstitution');
 		if (!empty($publisherInstitution)) {
 			$publisher = $publisherInstitution;
 		}
@@ -41,7 +41,7 @@ class OAIMetadataFormat_RFC1807 extends OAIMetadataFormat {
 		$creators = array();
 		$authors = $article->getAuthors();
 		for ($i = 0, $num = count($authors); $i < $num; $i++) {
-			$authorName = $authors[$i]->getFullName(true);
+			$authorName = $authors[$i]->getFullName(false, true);
 			$affiliation = $authors[$i]->getLocalizedAffiliation();
 			if (!empty($affiliation)) {
 				$authorName .= '; ' . $affiliation;
@@ -51,15 +51,19 @@ class OAIMetadataFormat_RFC1807 extends OAIMetadataFormat {
 
 		// Subject
 		$subjects = array_merge_recursive(
-			$this->stripAssocArray((array) $article->getDiscipline(null)),
-			$this->stripAssocArray((array) $article->getSubject(null))
+			stripAssocArray((array) $article->getDiscipline(null)),
+			stripAssocArray((array) $article->getSubject(null))
 		);
 		$subject = isset($subjects[$journal->getPrimaryLocale()])?$subjects[$journal->getPrimaryLocale()]:'';
 
 		// Coverage
 		$coverage = $article->getCoverage(null);
 
-		$url = Request::url($journal->getPath(), 'article', 'view', array($article->getBestArticleId()));
+		import('classes.issue.IssueAction');
+		$issueAction = new IssueAction();
+		$request = Application::getRequest();
+		$url = $request->url($journal->getPath(), 'article', 'view', array($article->getBestArticleId()));
+		$includeUrls = $journal->getSetting('publishingMode') != PUBLISHING_MODE_NONE || $issueAction->subscribedUser($request->getUser(), $journal, null, $article->getId());
 		$response = "<rfc1807\n" .
 			"\txmlns=\"http://info.internet.isi.edu:80/in-notes/rfc/files/rfc1807.txt\"\n" .
 			"\txmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" .
@@ -73,11 +77,10 @@ class OAIMetadataFormat_RFC1807 extends OAIMetadataFormat {
 			$this->formatElement('title', $article->getLocalizedTitle()) .
 			$this->formatElement('type', $section->getLocalizedIdentifyType()) .
 
-			$this->formatElement('type', $relation) .
 			$this->formatElement('author', $creators) .
 			($article->getDatePublished()?$this->formatElement('date', $article->getDatePublished()):'') .
-			$this->formatElement('copyright', strip_tags($journal->getLocalizedSetting('copyrightNotice'))) .
-			$this->formatElement('other_access', "url:$url") .
+			$this->formatElement('copyright', strip_tags($journal->getLocalizedData('licenseTerms'))) .
+			($includeUrls?$this->formatElement('other_access', "url:$url"):'') .
 			$this->formatElement('keyword', $subject) .
 			$this->formatElement('period', $coverage) .
 			$this->formatElement('monitoring', $article->getLocalizedSponsor()) .
@@ -105,5 +108,3 @@ class OAIMetadataFormat_RFC1807 extends OAIMetadataFormat {
 		return $response;
 	}
 }
-
-?>

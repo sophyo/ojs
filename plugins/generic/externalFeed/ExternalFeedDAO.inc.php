@@ -3,8 +3,8 @@
 /**
  * @file plugins/generic/externalFeed/ExternalFeedDAO.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class ExternalFeedDAO
@@ -22,9 +22,9 @@ class ExternalFeedDAO extends DAO {
 	/**
 	 * Constructor
 	 */
-	function ExternalFeedDAO($parentPluginName) {
+	function __construct($parentPluginName) {
 		$this->parentPluginName = $parentPluginName;
-		parent::DAO();
+		parent::__construct();
 	}
 
 	/**
@@ -63,8 +63,8 @@ class ExternalFeedDAO extends DAO {
 	 * @param $row array
 	 * @return ExternalFeed
 	 */
-	function &_returnExternalFeedFromRow($row) {
-		$externalFeedPlugin =& PluginRegistry::getPlugin('generic', $this->parentPluginName);
+	function _returnExternalFeedFromRow($row) {
+		$externalFeedPlugin = PluginRegistry::getPlugin('generic', $this->parentPluginName);
 		$externalFeedPlugin->import('ExternalFeed');
 
 		$externalFeed = new ExternalFeed();
@@ -256,4 +256,4 @@ class ExternalFeedDAO extends DAO {
 	}
 }
 
-?>
+

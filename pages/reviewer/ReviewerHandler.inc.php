@@ -3,8 +3,8 @@
 /**
  * @file pages/reviewer/ReviewerHandler.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class ReviewerHandler
@@ -19,8 +19,8 @@ class ReviewerHandler extends PKPReviewerHandler {
 	/**
 	 * Constructor
 	 */
-	function ReviewerHandler() {
-		parent::PKPReviewerHandler();
+	function __construct() {
+		parent::__construct();
 		$this->addRoleAssignment(
 			ROLE_ID_REVIEWER, array(
 				'submission', 'step', 'saveStep',
@@ -34,12 +34,17 @@ class ReviewerHandler extends PKPReviewerHandler {
 	 */
 	function authorize($request, &$args, $roleAssignments) {
 		$context = $request->getContext();
-		if ($context->getSetting('reviewerAccessKeysEnabled')) {
+		if ($context->getData('reviewerAccessKeysEnabled')) {
 			$this->_validateAccessKey($request);
 		}
 
 		import('lib.pkp.classes.security.authorization.SubmissionAccessPolicy');
-		$this->addPolicy(new SubmissionAccessPolicy($request, $args, $roleAssignments));
+		$router = $request->getRouter();
+		$this->addPolicy(new SubmissionAccessPolicy(
+			$request,
+			$args,
+			$roleAssignments
+		));
 
 
 		return parent::authorize($request, $args, $roleAssignments);
@@ -92,4 +97,4 @@ class ReviewerHandler extends PKPReviewerHandler {
 	}
 }
 
-?>
+

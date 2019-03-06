@@ -3,8 +3,8 @@
 /**
  * @file plugins/generic/driver/DRIVERPlugin.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class DRIVERPlugin
@@ -24,14 +24,11 @@ import('lib.pkp.classes.plugins.GenericPlugin');
 class DRIVERPlugin extends GenericPlugin {
 
 	/**
-	 * Called as a plugin is registered to the registry
-	 * @param $category String Name of category plugin was registered to
-	 * @return boolean True if plugin initialized successfully; if false,
-	 * 	the plugin will not be registered.
+	 * @copydoc Plugin::register()
 	 */
-	function register($category, $path) {
-		$success = parent::register($category, $path);
-		if ($success && $this->getEnabled()) {
+	function register($category, $path, $mainContextId = null) {
+		$success = parent::register($category, $path, $mainContextId);
+		if ($success && $this->getEnabled($mainContextId)) {
 			$this->import('DRIVERDAO');
 			$driverDao = new DRIVERDAO();
 			DAORegistry::registerDAO('DRIVERDAO', $driverDao);
@@ -138,14 +135,14 @@ class DRIVERPlugin extends GenericPlugin {
 			$issueDao = DAORegistry::getDAO('IssueDAO');
 
 			$journal = $journalDao->getById($row['journal_id']);
-			$article = $publishedArticleDao->getPublishedArticleByArticleId($row['submission_id']);
+			$article = $publishedArticleDao->getByArticleId($row['submission_id']);
 			$issue = $issueDao->getById($article->getIssueId());
 
 			// is open access
 			$status = '';
-			if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN) {
+			if ($journal->getData('publishingMode') == PUBLISHING_MODE_OPEN) {
 				$status = DRIVER_ACCESS_OPEN;
-			} else if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION) {
+			} else if ($journal->getData('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION) {
 				if ($issue->getAccessStatus() == 0 || $issue->getAccessStatus() == ISSUE_ACCESS_OPEN) {
 					$status = DRIVER_ACCESS_OPEN;
 				} else if ($issue->getAccessStatus() == ISSUE_ACCESS_SUBSCRIPTION) {
@@ -158,7 +155,7 @@ class DRIVERPlugin extends GenericPlugin {
 					}
 				}
 			}
-			if ($journal->getSetting('restrictSiteAccess') == 1 || $journal->getSetting('restrictArticleAccess') == 1) {
+			if ($journal->getData('restrictSiteAccess') == 1 || $journal->getData('restrictArticleAccess') == 1) {
 				$status = DRIVER_ACCESS_RESTRICTED;
 			}
 
@@ -190,14 +187,14 @@ class DRIVERPlugin extends GenericPlugin {
 			$issueDao = DAORegistry::getDAO('IssueDAO');
 
 			$journal = $journalDao->getById($journalId);
-			$article = $publishedArticleDao->getPublishedArticleByArticleId($articleId);
+			$article = $publishedArticleDao->getByArticleId($articleId);
 			$issue = $issueDao->getById($article->getIssueId());
 
 			// is open access
 			$status = '';
-			if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_OPEN) {
+			if ($journal->getData('publishingMode') == PUBLISHING_MODE_OPEN) {
 				$status = DRIVER_ACCESS_OPEN;
-			} else if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION) {
+			} else if ($journal->getData('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION) {
 				if ($issue->getAccessStatus() == 0 || $issue->getAccessStatus() == ISSUE_ACCESS_OPEN) {
 					$status = DRIVER_ACCESS_OPEN;
 				} else if ($issue->getAccessStatus() == ISSUE_ACCESS_SUBSCRIPTION) {
@@ -210,7 +207,7 @@ class DRIVERPlugin extends GenericPlugin {
 					}
 				}
 			}
-			if ($journal->getSetting('restrictSiteAccess') == 1 || $journal->getSetting('restrictArticleAccess') == 1) {
+			if ($journal->getData('restrictSiteAccess') == 1 || $journal->getData('restrictArticleAccess') == 1) {
 				$status = DRIVER_ACCESS_RESTRICTED;
 			}
 
@@ -228,4 +225,4 @@ class DRIVERPlugin extends GenericPlugin {
 
 }
 
-?>
+

@@ -3,8 +3,8 @@
 /**
  * @file controllers/modals/submissionMetadata/form/IssueEntrySubmissionReviewForm.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class CatalogEntrySubmissionReviewForm
@@ -26,21 +26,57 @@ class IssueEntrySubmissionReviewForm extends SubmissionMetadataViewForm {
 	 * @param $stageId integer
 	 * @param $formParams array
 	 */
-	function IssueEntrySubmissionReviewForm($submissionId, $stageId = null, $formParams = null) {
-		parent::SubmissionMetadataViewForm($submissionId, $stageId, $formParams, 'controllers/modals/submissionMetadata/form/issueEntrySubmissionReviewForm.tpl');
+	function __construct($submissionId, $stageId = null, $formParams = null) {
+		parent::__construct($submissionId, $stageId, $formParams, 'controllers/modals/submissionMetadata/form/issueEntrySubmissionReviewForm.tpl');
 		AppLocale::requireComponents(LOCALE_COMPONENT_APP_COMMON, LOCALE_COMPONENT_APP_SUBMISSION, LOCALE_COMPONENT_APP_AUTHOR);
+	}
+
+	/**
+	 * Fetch the HTML contents of the form.
+	 * @param $request PKPRequest
+	 * return string
+	 */
+	function fetch($request) {
+		$context = $request->getContext();
+
+		$roleDao = DAORegistry::getDAO('RoleDAO');
+		$user = $request->getUser();
+		$canSubmitAll = $roleDao->userHasRole($context->getId(), $user->getId(), ROLE_ID_MANAGER) ||
+			$roleDao->userHasRole($context->getId(), $user->getId(), ROLE_ID_SUB_EDITOR);
+
+		// Get section options for this context
+		$sectionDao = DAORegistry::getDAO('SectionDAO');
+		$sectionOptions = array('0' => '') + $sectionDao->getTitlesByContextId($context->getId(), !$canSubmitAll);
+
+		// Get section policies for this context
+		$sectionPolicies = array();
+		foreach ($sectionOptions as $sectionId => $sectionTitle) {
+			$section = $sectionDao->getById($sectionId);
+
+			$sectionPolicy = $section ? $section->getLocalizedPolicy() : null;
+			$sectionPolicyPlainText = trim(PKPString::html2text($sectionPolicy));
+			if (strlen($sectionPolicyPlainText) > 0)
+				$sectionPolicies[$sectionId] = $sectionPolicy;
+		}
+
+		$templateMgr = TemplateManager::getManager($request);
+		$templateMgr->assign('sectionPolicies', $sectionPolicies);
+
+		return parent::fetch($request);
 	}
 
 	/**
 	 * Save the metadata.
 	 */
-	function execute($request) {
-		parent::execute($request);
+	function execute() {
+		parent::execute();
 
 		$submission = $this->getSubmission();
+		HookRegistry::call('issueentrysubmissionreviewform::execute', array($this, $submission));
+
 		$submissionDao = Application::getSubmissionDAO();
 		$publishedArticleDao = DAORegistry::getDAO('PublishedArticleDAO');
-		$publishedArticle = $publishedArticleDao->getPublishedArticleByArticleId($submission->getId(), null, false);
+		$publishedArticle = $publishedArticleDao->getByArticleId($submission->getId(), null, false);
 		$isExistingEntry = $publishedArticle?true:false;
 
 		if ($isExistingEntry) {
@@ -53,4 +89,4 @@ class IssueEntrySubmissionReviewForm extends SubmissionMetadataViewForm {
 	}
 }
 
-?>
+

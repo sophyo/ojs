@@ -3,8 +3,8 @@
 /**
  * @file plugins/generic/externalFeed/ExternalFeedBlockPlugin.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class ExternalFeedBlockPlugin
@@ -19,8 +19,9 @@ class ExternalFeedBlockPlugin extends BlockPlugin {
 	/** @var string Name of parent plugin */
 	var $parentPluginName;
 
-	function ExternalFeedBlockPlugin($parentPluginName) {
+	function __construct($parentPluginName) {
 		$this->parentPluginName = $parentPluginName;
+		parent::__construct();
 	}
 
 	/**
@@ -58,9 +59,8 @@ class ExternalFeedBlockPlugin extends BlockPlugin {
 	 * Get the external feed plugin
 	 * @return object
 	 */
-	function &getExternalFeedPlugin() {
-		$plugin =& PluginRegistry::getPlugin('generic', $this->parentPluginName);
-		return $plugin;
+	function getExternalFeedPlugin() {
+		return PluginRegistry::getPlugin('generic', $this->parentPluginName);
 	}
 
 	/**
@@ -68,7 +68,7 @@ class ExternalFeedBlockPlugin extends BlockPlugin {
 	 * @return string
 	 */
 	function getPluginPath() {
-		$plugin =& $this->getExternalFeedPlugin();
+		$plugin = $this->getExternalFeedPlugin();
 		return $plugin->getPluginPath();
 	}
 
@@ -78,12 +78,12 @@ class ExternalFeedBlockPlugin extends BlockPlugin {
 	 * @param $request PKPRequest
 	 * @return $string
 	 */
-	function getContents(&$templateMgr, $request = null) {
+	function getContents($templateMgr, $request = null) {
 		$journal = $request->getJournal();
 		if (!$journal) return '';
 
 		$journalId = $journal->getId();
-		$plugin =& $this->getExternalFeedPlugin();
+		$plugin = $this->getExternalFeedPlugin();
 		if (!$plugin->getEnabled()) return '';
 
 		$requestedPage = $request->getRequestedPage();
@@ -123,4 +123,4 @@ class ExternalFeedBlockPlugin extends BlockPlugin {
 	}
 }
 
-?>
+

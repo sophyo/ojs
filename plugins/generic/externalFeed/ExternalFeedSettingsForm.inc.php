@@ -3,8 +3,8 @@
 /**
  * @file plugins/generic/externalFeed/ExternalFeedSettingsForm.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class ExternalFeedSettingsForm
@@ -28,13 +28,14 @@ class ExternalFeedSettingsForm extends Form {
 	 * @param $plugin object
 	 * @param $journalId int
 	 */
-	function ExternalFeedSettingsForm(&$plugin, $journalId) {
+	function __construct(&$plugin, $journalId) {
 		$this->journalId = $journalId;
 		$this->plugin =& $plugin;
 
-		parent::Form($plugin->getTemplatePath() . 'settingsForm.tpl');
+		parent::__construct($plugin->getTemplateResource('settingsForm.tpl'));
 
 		$this->addCheck(new FormValidatorPost($this));
+		$this->addCheck(new FormValidatorCSRF($this));
 	}
 
 	/**
@@ -57,9 +58,9 @@ class ExternalFeedSettingsForm extends Form {
 	}
 
 	/**
-	 * Display the form.
+	 * @copydoc Form::display
 	 */
-	function display() {
+	function display($request = null, $template = null) {
 		$journalId = $this->journalId;
 		$plugin = $this->plugin;
 
@@ -68,7 +69,7 @@ class ExternalFeedSettingsForm extends Form {
 		$templateMgr->assign('journalStyleSheet', $plugin->getSetting($journalId, 'externalFeedStyleSheet'));
 		$templateMgr->assign('defaultStyleSheetUrl', Request::getBaseUrl() . '/' . $plugin->getDefaultStyleSheetFile());
 
-		parent::display();
+		parent::display($request, $template);
 	}
 
 	/**
@@ -89,7 +90,7 @@ class ExternalFeedSettingsForm extends Form {
 			}
 
 			$uploadName = $plugin->getPluginPath() . '/' . $settingName . '.css';
-			if($fileManager->uploadJournalFile($journalId, $settingName, $uploadName)) {			
+			if($fileManager->uploadContextFile($journalId, $settingName, $uploadName)) {
 				$value = array(
 					'name' => $fileManager->getUploadedFileName($settingName),
 					'uploadName' => $uploadName,
@@ -117,7 +118,7 @@ class ExternalFeedSettingsForm extends Form {
 		import('classes.file.PublicFileManager');
 		$fileManager = new PublicFileManager();
 
-		if ($fileManager->removeJournalFile($journalId, $setting['uploadName'])) {
+		if ($fileManager->removeContextFile($journalId, $setting['uploadName'])) {
 			$plugin->updateSetting($journalId, $settingName, null);
 			return true;
 		} else {
@@ -126,4 +127,4 @@ class ExternalFeedSettingsForm extends Form {
 	}
 }
 
-?>
+

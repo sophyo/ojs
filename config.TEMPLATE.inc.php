@@ -7,8 +7,8 @@
 ;
 ; config.TEMPLATE.inc.php
 ;
-; Copyright (c) 2014-2016 Simon Fraser University Library
-; Copyright (c) 2003-2016 John Willinsky
+; Copyright (c) 2014-2018 Simon Fraser University
+; Copyright (c) 2003-2018 John Willinsky
 ; Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
 ;
 ; OJS Configuration settings.
@@ -115,6 +115,12 @@ enable_minified = Off
 ; alert purposes only.
 enable_beacon = On
 
+; Set this to "On" if you would like to only have a single, site-wide Privacy
+; Statement, rather than a separate Privacy Statement for each journal. Setting
+; this to "Off" will allow you to enter a site-wide Privacy Statement as well
+; as separate Privacy Statements for each journal.
+sitewide_privacy_statement = Off
+
 
 ;;;;;;;;;;;;;;;;;;;;;
 ; Database Settings ;
@@ -127,6 +133,9 @@ host = localhost
 username = ojs
 password = ojs
 name = ojs
+; Set the non-standard port and/or socket, if used
+; port = 3306
+; unix_socket = /var/run/mysqld/mysqld.sock
 
 ; Enable persistent connections
 persistent = Off
@@ -191,11 +200,6 @@ connection_charset = Off
 ; Must be set to "Off" if not supported by the database server
 database_charset = Off
 
-; Enable character normalization to utf-8 (recommended)
-; If disabled, strings will be passed through in their native encoding
-; Note that client_charset and database collation must be set
-; to "utf-8" for this to work, as characters are stored in utf-8
-charset_normalization = Off
 
 ;;;;;;;;;;;;;;;;;
 ; File Settings ;
@@ -216,6 +220,10 @@ public_files_dir = public
 
 ; Permissions mask for created files and directories
 umask = 0022
+
+; The minimum percentage similarity between filenames that should be considered
+; a possible revision
+filename_revision_match = 70
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -251,6 +259,9 @@ encryption = sha1
 
 ; The unique salt to use for generating password reset hashes
 salt = "YouMustSetASecretKeyHere!!"
+
+; The unique secret used for encoding and decoding API keys
+api_key_secret = ""
 
 ; The number of seconds before a password reset hash expires (defaults to 7200 / 2 hours)
 reset_seconds = 7200
@@ -311,16 +322,33 @@ allowed_html = "a[href|target|title],em,strong,cite,code,ul,ol,li[class],dl,dt,d
 ; default_envelope_sender = my_address@my_host.com
 
 ; Force the default envelope sender (if present)
-; This is useful if setting up a site-wide noreply address
+; This is useful if setting up a site-wide no-reply address
 ; The reply-to field will be set with the reply-to or from address.
 ; force_default_envelope_sender = Off
+
+; Force a DMARC compliant from header (RFC5322.From)
+; If any of your users have email addresses in domains not under your control
+; you may need to set this to be compliant with DMARC policies published by
+; those 3rd party domains.
+; Setting this will move the users address into the reply-to field and the
+; from field wil be rewritten with the default_envelope_sender.
+; To use this you must set force_default_enveloper_sender = On and
+; default_envelope_sender must be set to a valid address in a domain you own.
+; force_dmarc_compliant_from = Off
+
+; The display name to use with a DMARC compliant from header
+; By default the DMARC compliant from will have an empty name but this can
+; be changed by adding a text here.
+; You can use '%n' to insert the users name from the original from header
+; and '%s' to insert the localized sitename.
+; dmarc_compliant_from_displayname = '%n via %s'
 
 ; Amount of time required between attempts to send non-editorial emails
 ; in seconds. This can be used to help prevent email relaying via OJS.
 time_between_emails = 3600
 
 ; Maximum number of recipients that can be included in a single email
-; (either as To:, Cc:, or Bcc: addresses) for a non-priveleged user
+; (either as To:, Cc:, or Bcc: addresses) for a non-privileged user
 max_recipients = 10
 
 ; If enabled, email addresses must be validated before login is possible.
@@ -388,10 +416,10 @@ oai_max_records = 100
 
 [interface]
 
-; Number of items to display per page; overridable on a per-journal basis
+; Number of items to display per page; can be overridden on a per-journal basis
 items_per_page = 25
 
-; Number of page links to display; overridable on a per-journal basis
+; Number of page links to display; can be overridden on a per-journal basis
 page_links = 10
 
 
@@ -413,12 +441,8 @@ recaptcha_private_key = your_private_key
 ; Whether or not to use Captcha on user registration
 captcha_on_register = on
 
-; Whether or not to use Captcha on user comments
-captcha_on_comments = on
-
-; Whether or not to use Captcha on notification mailing list registration
-captcha_on_mailinglist = on
-
+; Validate the hostname in the ReCaptcha response
+recaptcha_enforce_hostname = Off
 
 ;;;;;;;;;;;;;;;;;;;;;
 ; External Commands ;

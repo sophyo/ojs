@@ -4,8 +4,8 @@
 /**
  * @file js/controllers/tab/issueEntry/IssueEntryTabHandler.js
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2000-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2000-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class IssueEntryTabHandler
@@ -94,7 +94,6 @@
 		if ($updateSourceElement.attr('id').match(/^galleysGridContainer/)) {
 
 			if (this.tabsUrl_ && this.tabContentUrl_) {
-				$element = this.getHtmlElement();
 				$.get(this.tabsUrl_, null, this.callbackWrapper(
 						this.updateTabsHandler_), 'json');
 			}
@@ -122,7 +121,7 @@
 				currentIndexes = {},
 				// only interested in galley tabs, so filter out the others
 				regexp = /galley(\d+)/,
-				i, j, id, match, url, totalWidth = 0;
+				i, j, id, match, url;
 
 		for (j = 0; j < currentTabs.length; j++) {
 			id = currentTabs[j].getAttribute('id');
@@ -225,27 +224,6 @@
 		} else {
 			return null;
 		}
-	};
-
-
-	/**
-	 * Callback that overrides TabHandler's tabReloadRequested method
-	 * in order to close the modal once the form has been submitted.
-	 *
-	 * TODO: This should be handled earlier in the stack. Ideally, the issueEntry
-	 *  ajax form should return an empty content string once the form is
-	 *  submitted. If that happened, then AjaxFormHandler::handleResponse will
-	 *  automatically emit the `formSubmitted` event, which the modal will
-	 *  pick up on and close itself.
-	 *
-	 * @param {HTMLElement} divElement The parent DIV element
-	 *  which contains the tabs.
-	 * @param {Event} event The triggered event (tabsReloadRequested).
-	 * @param {{tabsUrl: string}} jsonContent The tabs ui data.
-	 */
-	$.pkp.controllers.tab.issueEntry.IssueEntryTabHandler.prototype.
-			tabsReloadRequested = function(divElement, event, jsonContent) {
-		this.getHtmlElement().trigger('formSubmitted');
 	};
 /** @param {jQuery} $ jQuery closure. */
 }(jQuery));

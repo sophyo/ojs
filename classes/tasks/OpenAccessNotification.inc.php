@@ -3,8 +3,8 @@
 /**
  * @file classes/tasks/OpenAccessNotification.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class OpenAccessNotification
@@ -16,13 +16,6 @@
 import('lib.pkp.classes.scheduledTask.ScheduledTask');
 
 class OpenAccessNotification extends ScheduledTask {
-
-	/**
-	 * Constructor.
-	 */
-	function OpenAccessNotification() {
-		$this->ScheduledTask();
-	}
 
 	/**
 	 * @see ScheduledTask::getName()
@@ -39,12 +32,12 @@ class OpenAccessNotification extends ScheduledTask {
 
 			$email->setSubject($email->getSubject($journal->getPrimaryLocale()));
 			$email->setReplyTo(null);
-			$email->addRecipient($journal->getSetting('contactEmail'), $journal->getSetting('contactName'));
+			$email->addRecipient($journal->getData('contactEmail'), $journal->getData('contactName'));
 
 			$paramArray = array(
 				'journalName' => $journal->getLocalizedName(),
 				'journalUrl' => Request::url($journal->getPath()),
-				'editorialContactSignature' => $journal->getSetting('contactName') . "\n" . $journal->getLocalizedName()
+				'editorialContactSignature' => $journal->getData('contactName') . "\n" . $journal->getLocalizedName()
 			);
 			$email->assignParams($paramArray);
 
@@ -53,11 +46,13 @@ class OpenAccessNotification extends ScheduledTask {
 			$mimeBoundary = '==boundary_' . md5(microtime());
 
 			$templateMgr = TemplateManager::getManager();
-			$templateMgr->assign('body', $email->getBody($journal->getPrimaryLocale()));
-			$templateMgr->assign('templateSignature', $journal->getSetting('emailSignature'));
-			$templateMgr->assign('mimeBoundary', $mimeBoundary);
-			$templateMgr->assign('issue', $issue);
-			$templateMgr->assign('publishedArticles', $publishedArticles);
+			$templateMgr->assign(array(
+				'body' => $email->getBody($journal->getPrimaryLocale()),
+				'templateSignature' => $journal->getData('emailSignature'),
+				'mimeBoundary' => $mimeBoundary,
+				'issue' => $issue,
+				'publishedArticles' => $publishedArticles,
+			));
 
 			$email->addHeader('MIME-Version', '1.0');
 			$email->setContentType('multipart/alternative; boundary="'.$mimeBoundary.'"');
@@ -74,7 +69,7 @@ class OpenAccessNotification extends ScheduledTask {
 	function sendNotifications ($journal, $curDate) {
 
 		// Only send notifications if subscriptions and open access notifications are enabled
-		if ($journal->getSetting('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION && $journal->getSetting('enableOpenAccessNotification')) {
+		if ($journal->getData('publishingMode') == PUBLISHING_MODE_SUBSCRIPTION && $journal->getData('enableOpenAccessNotification')) {
 
 			$curYear = $curDate['year'];
 			$curMonth = $curDate['month'];
@@ -99,7 +94,7 @@ class OpenAccessNotification extends ScheduledTask {
 	}
 
 	/**
-	 * @see ScheduledTaks::executeActions()
+	 * @see ScheduledTask::executeActions()
 	 */
 	protected function executeActions() {
 		$journalDao = DAORegistry::getDAO('JournalDAO');
@@ -112,7 +107,7 @@ class OpenAccessNotification extends ScheduledTask {
 		);
 
 		while ($journal = $journals->next()) {
-			// Send notifications based on current date			
+			// Send notifications based on current date
 			$this->sendNotifications($journal, $todayDate);
 		}
 
@@ -134,7 +129,7 @@ class OpenAccessNotification extends ScheduledTask {
 
 			$journals = $journalDao->getAll(true);
 			while ($journal = $journals->next()) {
-				// Send reminders for simulated 31st day of short month		
+				// Send reminders for simulated 31st day of short month
 				$this->sendNotifications($journal, $curDate);
 			}
 		}
@@ -149,7 +144,7 @@ class OpenAccessNotification extends ScheduledTask {
 
 			$journals = $journalDao->getAll(true);
 			while ($journal = $journals->next()) {
-				// Send reminders for simulated 30th day of February		
+				// Send reminders for simulated 30th day of February
 				$this->sendNotifications($journal, $curDate);
 			}
 
@@ -160,7 +155,7 @@ class OpenAccessNotification extends ScheduledTask {
 
 				$journals = $journalDao->getAll(true);
 				while ($journal = $journals->next()) {
-					// Send reminders for simulated 29th day of February		
+					// Send reminders for simulated 29th day of February
 					$this->sendNotifications($journal, $curDate);
 				}
 			}
@@ -168,4 +163,4 @@ class OpenAccessNotification extends ScheduledTask {
 	}
 }
 
-?>
+

@@ -3,8 +3,8 @@
 /**
  * @file classes/core/Application.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2003-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class Application
@@ -17,11 +17,10 @@
 
 import('lib.pkp.classes.core.PKPApplication');
 
-define('PHP_REQUIRED_VERSION', '5.2.0');
+define('PHP_REQUIRED_VERSION', '7.1.0');
 define('REQUIRES_XSL', false);
 
-define('ASSOC_TYPE_ARTICLE',		ASSOC_TYPE_SUBMISSION);
-define('ASSOC_TYPE_PUBLISHED_ARTICLE',	ASSOC_TYPE_PUBLISHED_SUBMISSION);
+define('ASSOC_TYPE_ARTICLE',		ASSOC_TYPE_SUBMISSION); // DEPRECATED but needed by filter framework
 define('ASSOC_TYPE_GALLEY',		ASSOC_TYPE_REPRESENTATION);
 
 define('ASSOC_TYPE_JOURNAL',		0x0000100);
@@ -30,14 +29,10 @@ define('ASSOC_TYPE_ISSUE_GALLEY',	0x0000105);
 
 define('CONTEXT_JOURNAL', 1);
 
-class Application extends PKPApplication {
-	/**
-	 * Constructor
-	 */
-	function Application() {
-		parent::PKPApplication();
-	}
+define('LANGUAGE_PACK_DESCRIPTOR_URL', 'http://pkp.sfu.ca/ojs/xml/%s/locales.xml');
+define('LANGUAGE_PACK_TAR_URL', 'http://pkp.sfu.ca/ojs/xml/%s/%s.tar.gz');
 
+class Application extends PKPApplication {
 	/**
 	 * Get the "context depth" of this application, i.e. the number of
 	 * parts of the URL after index.php that represent the context of
@@ -61,7 +56,7 @@ class Application extends PKPApplication {
 	 * Get the symbolic name of this application
 	 * @return string
 	 */
-	function getName() {
+	static function getName() {
 		return 'ojs2';
 	}
 
@@ -88,15 +83,10 @@ class Application extends PKPApplication {
 	 */
 	function getDAOMap() {
 		return array_merge(parent::getDAOMap(), array(
-			'SubmissionCommentDAO' => 'lib.pkp.classes.submission.SubmissionCommentDAO',
 			'ArticleDAO' => 'classes.article.ArticleDAO',
 			'ArticleGalleyDAO' => 'classes.article.ArticleGalleyDAO',
 			'ArticleSearchDAO' => 'classes.search.ArticleSearchDAO',
 			'AuthorDAO' => 'classes.article.AuthorDAO',
-			'CategoryDAO' => 'classes.journal.categories.CategoryDAO',
-			'EditorSubmissionDAO' => 'classes.submission.editor.EditorSubmissionDAO',
-			'EmailTemplateDAO' => 'classes.mail.EmailTemplateDAO',
-			'GiftDAO' => 'classes.gift.GiftDAO',
 			'IndividualSubscriptionDAO' => 'classes.subscription.IndividualSubscriptionDAO',
 			'InstitutionalSubscriptionDAO' => 'classes.subscription.InstitutionalSubscriptionDAO',
 			'IssueDAO' => 'classes.issue.IssueDAO',
@@ -108,20 +98,10 @@ class Application extends PKPApplication {
 			'OAIDAO' => 'classes.oai.ojs.OAIDAO',
 			'OJSCompletedPaymentDAO' => 'classes.payment.ojs.OJSCompletedPaymentDAO',
 			'PublishedArticleDAO' => 'classes.article.PublishedArticleDAO',
-			'QueuedPaymentDAO' => 'lib.pkp.classes.payment.QueuedPaymentDAO',
-			'ReviewAssignmentDAO' => 'lib.pkp.classes.submission.reviewAssignment.ReviewAssignmentDAO',
 			'ReviewerSubmissionDAO' => 'classes.submission.reviewer.ReviewerSubmissionDAO',
-			'RoleDAO' => 'classes.security.RoleDAO',
-			'ScheduledTaskDAO' => 'lib.pkp.classes.scheduledTask.ScheduledTaskDAO',
 			'SectionDAO' => 'classes.journal.SectionDAO',
-			'StageAssignmentDAO' => 'lib.pkp.classes.stageAssignment.StageAssignmentDAO',
-			'SubmissionEventLogDAO' => 'classes.log.SubmissionEventLogDAO',
-			'SubmissionFileDAO' => 'classes.article.SubmissionFileDAO',
 			'SubscriptionDAO' => 'classes.subscription.SubscriptionDAO',
 			'SubscriptionTypeDAO' => 'classes.subscription.SubscriptionTypeDAO',
-			'UserGroupAssignmentDAO' => 'lib.pkp.classes.security.UserGroupAssignmentDAO',
-			'UserDAO' => 'classes.user.UserDAO',
-			'UserSettingsDAO' => 'classes.user.UserSettingsDAO'
 		));
 	}
 
@@ -136,20 +116,11 @@ class Application extends PKPApplication {
 			// This is necessary as several other plug-in categories
 			// depend on meta-data. This is a very rudimentary type of
 			// dependency management for plug-ins.
-			'viewableFiles',
 			'metadata',
 			'auth',
 			'blocks',
-			// NB: 'citationFormats' is an obsolete category for backwards
-			// compatibility only. This will be replaced by 'citationOutput',
-			// see #5156.
-			'citationFormats',
-			'citationLookup',
-			'citationOutput',
-			'citationParser',
 			'gateways',
 			'generic',
-			'implicitAuth',
 			'importexport',
 			'oaiMetadataFormats',
 			'paymethod',
@@ -168,11 +139,26 @@ class Application extends PKPApplication {
 	}
 
 	/**
+	 * Get the context settings DAO.
+	 * @return SettingsDAO
+	 */
+	static function getContextSettingsDAO() {
+		return DAORegistry::getDAO('JournalSettingsDAO');
+	}
+
+	/**
 	 * Get the submission DAO.
 	 * @return SubmissionDAO
 	 */
 	static function getSubmissionDAO() {
 		return DAORegistry::getDAO('ArticleDAO');
+	}
+
+	/**
+	 * Get the published submission DAO.
+	 */
+	static function getPublishedSubmissionDAO() {
+		return DAORegistry::getDAO('PublishedArticleDAO');
 	}
 
 	/**
@@ -247,6 +233,25 @@ class Application extends PKPApplication {
 	static function getFileDirectories() {
 		return array('context' => '/journals/', 'submission' => '/articles/');
 	}
-}
 
-?>
+	/**
+	 * @copydoc PKPApplication::getRoleNames()
+	 */
+	static function getRoleNames($contextOnly = false, $roleIds = null) {
+		$roleNames = parent::getRoleNames($contextOnly, $roleIds);
+		if (!$roleIds || !in_array(ROLE_ID_SUBSCRIPTION_MANAGER, $roleIds)) {
+			$roleNames[ROLE_ID_SUBSCRIPTION_MANAGER] = 'user.role.subscriptionManager';
+		}
+		return $roleNames;
+	}
+
+	/**
+	 * Get the payment manager.
+	 * @param $context Context
+	 * @return OJSPaymentManager
+	 */
+	static function getPaymentManager($context) {
+		import('classes.payment.ojs.OJSPaymentManager');
+		return new OJSPaymentManager($context);
+	}
+}

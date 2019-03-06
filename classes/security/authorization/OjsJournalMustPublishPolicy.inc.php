@@ -2,8 +2,8 @@
 /**
  * @file classes/security/authorization/OjsJournalMustPublishPolicy.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2000-2016 John Willinsky
+ * Copyright (c) 2014-2018 Simon Fraser University
+ * Copyright (c) 2000-2018 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class OjsJournalMustPublishPolicy
@@ -25,8 +25,8 @@ class OjsJournalMustPublishPolicy extends AuthorizationPolicy {
 	 * @param $args array request arguments
 	 * @param $roleAssignments array
 	 */
-	function OjsJournalMustPublishPolicy($request) {
-		parent::AuthorizationPolicy('user.authorization.journalDoesNotPublish');
+	function __construct($request) {
+		parent::__construct('user.authorization.journalDoesNotPublish');
 		$this->_context = $request->getContext();
 	}
 
@@ -44,13 +44,14 @@ class OjsJournalMustPublishPolicy extends AuthorizationPolicy {
 				ROLE_ID_MANAGER,
 				ROLE_ID_SITE_ADMIN,
 				ROLE_ID_ASSISTANT,
-				ROLE_ID_SECTION_EDITOR
+				ROLE_ID_SUB_EDITOR,
+				ROLE_ID_SUBSCRIPTION_MANAGER,
 			)
 		))>0) {
 			return AUTHORIZATION_PERMIT;
 		}
 
-		if ($this->_context->getSetting('publishingMode') == PUBLISHING_MODE_NONE) {
+		if ($this->_context->getData('publishingMode') == PUBLISHING_MODE_NONE) {
 			return AUTHORIZATION_DENY;
 		}
 
@@ -58,4 +59,4 @@ class OjsJournalMustPublishPolicy extends AuthorizationPolicy {
 	}
 }
 
-?>
+
